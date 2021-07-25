@@ -387,7 +387,7 @@ int main()
 			SnakeGame game(width, height);
 			game.InitialSnakePos(1, 1);
 			int moveCount = 0;
-			while (!game.GameOver() && !GetAsyncKeyState(VK_ESCAPE) && moveCount <= 200)
+			while (!game.GameOver() && !GetAsyncKeyState(VK_ESCAPE) && ++moveCount <= 200)
 			{
 				const vector<float>& Input = game.BuildNeuralInput();
 				const vector<float>& Output = BuildOutput(nets[n].Feed(Input));
@@ -399,7 +399,6 @@ int main()
 				else if (Index == 2)
 					game.Turn('l');
 				game.Move();
-				moveCount++;
 			}
 			totalMovesInCurrentGeneration += moveCount;
 			nets[n].Info.Accuracy = (float)game.GetScore();
