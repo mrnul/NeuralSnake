@@ -10,7 +10,7 @@ Creating a population of 1000 networks ([check the repo](https://github.com/mrnu
 
 Those elite networks get to live for one more generation and give birth to 900 new networks with some mutations, and those new networks replace the previous non-elite networks.
 
-After training in a 10x10 grid for ~700 generations the best network is able to play for a decent amount of time in a 40x25 grid.
+After training in a 10x10 grid for ~200 generations the best network is able to play for a decent amount of time in a 40x25 grid.
 
 # Input and output of the networks
 
