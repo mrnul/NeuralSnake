@@ -4,13 +4,13 @@ Not proud for the quality of code but it was fun!
 
 # What is going on
 
-Creating a population of 1000 networks ([check the repo](https://github.com/mrnul/GNeural-Nets/tree/master/src)) that start to play SnakeGame. Each network stops playing the game after 200 moves or if gameover occurs (whichever comes first).
+Creating a population of 1000 networks ([check the repo](https://github.com/mrnul/GNeural-Nets/tree/master/src)) that start to play SnakeGame. Each network stops playing the game after 400 moves or if gameover occurs (whichever comes first).
 
 100 out of those 1000 are the elite networks (the networks that achieved the best score).
 
 Those elite networks get to live for one more generation and give birth to 900 new networks with some mutations, and those new networks replace the previous non-elite networks.
 
-After training in a 10x10 grid for ~200 generations the best network is able to play for a decent amount of time in a 40x25 grid.
+After training in a 10x10 grid for many generations the best network is able to play for a decent amount of time in a 40x25 grid.
 
 # Input and output of the networks
 
