@@ -51,8 +51,7 @@ struct BoardPoint
 class SnakeGame
 {
 private:
-	UniformIntRandom xRnd;
-	UniformIntRandom yRnd;
+	vector<UniformIntRandom> Rands;
 	vector<string> Board;
 	vector<BoardPoint> Snake;
 	BoardPoint Food;
@@ -146,12 +145,13 @@ public:
 		WALL = wall;
 		SNAKE = snake;
 		FOOD = food;
+		
+		Rands.resize(2);
+		Rands[0].Seed();
+		Rands[1].Seed();
 
-		xRnd.Seed();
-		yRnd.Seed();
-
-		xRnd.SetParams(1, Height - 2);
-		yRnd.SetParams(1, Width - 2);
+		Rands[0].SetParams(1, Height - 2);
+		Rands[1].SetParams(1, Width - 2);
 
 		for (int i = 0; i < Height; i++)
 		{
@@ -308,7 +308,7 @@ public:
 	void CreateFood()
 	{
 		do {
-			Food = BoardPoint(xRnd(), yRnd());
+			Food = BoardPoint(Rands[0](), Rands[1]());
 		} while (std::find(Snake.begin(), Snake.end(), Food) != Snake.end());
 	}
 
@@ -384,11 +384,11 @@ int main()
 
 	const int width = 10;
 	const int height = 10;
-	const int Elite = 150;
-	vector<GNeuralNetwork> nets(2000);
+	const int Elite = 100;
+	vector<GNeuralNetwork> nets(1000);
 	for (GNeuralNetwork& n : nets)
 	{
-		n.BuildFFNetwork({ 5, 8, 4, 3 });
+		n.BuildFFNetwork({ 5, 4, 3 });
 		n.RandomizeWeights();
 	}
 
@@ -401,7 +401,6 @@ int main()
 			SnakeGame game(width, height);
 			game.InitialSnakePos(1, 1);
 			int moveCount = 0;
-			int consecutiveNonEatingMoves = 0;
 			while (!game.GameOver())
 			{
 				const vector<float>& Input = game.BuildNeuralInput();
@@ -417,7 +416,7 @@ int main()
 
 				game.Move();
 
-				if (++moveCount >= 200 || GetAsyncKeyState(VK_ESCAPE))
+				if (++moveCount >= 400 || GetAsyncKeyState(VK_ESCAPE))
 					break;
 			}
 
@@ -451,7 +450,7 @@ int main()
 					else
 						weight = nets[parents[rand() % (int)parents.size()]].Layers[p.L].Neurons[p.N].InputVector[index].Weight;
 
-					if (rand() < (int)(RAND_MAX * 0.2f))
+					if (rand() < (int)(RAND_MAX * 0.1f))
 						weight += (float)r();
 				});
 		}
