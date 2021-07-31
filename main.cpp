@@ -9,11 +9,6 @@ using std::cin;
 using std::string;
 using std::vector;
 
-constexpr unsigned char EMPTY = ' ';
-constexpr unsigned char WALL = '#';
-constexpr unsigned char SNAKE = 178;
-constexpr unsigned char FOOD = 248;
-
 void HideCursor()
 {
 	HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -56,6 +51,8 @@ struct BoardPoint
 class SnakeGame
 {
 private:
+	UniformIntRandom xRnd;
+	UniformIntRandom yRnd;
 	vector<string> Board;
 	vector<BoardPoint> Snake;
 	BoardPoint Food;
@@ -65,6 +62,11 @@ private:
 	char CurrentDirection;
 
 	vector<string> Image;
+
+	unsigned char EMPTY = ' ';
+	unsigned char WALL = '#';
+	unsigned char SNAKE = 178;
+	unsigned char FOOD = 248;
 
 	float AbsoluteUpHittingDanger()
 	{
@@ -126,16 +128,30 @@ private:
 		}
 		return (1.f / distance) * 2.f - 1.f;
 	}
+
 public:
-	SnakeGame(const int width, const int height) { Initialize(width, height); }
-	void Initialize(const int width, const int height)
+	SnakeGame(const int width, const int height, const unsigned char empty = ' ', const unsigned char wall = '#', const unsigned char snake = 178, const unsigned char food = 248)
 	{
-		srand((unsigned int)time(0));
+		Initialize(width, height, empty, wall, snake, food);
+	}
+
+	void Initialize(const int width, const int height, const unsigned char empty = ' ', const unsigned char wall = '#', const unsigned char snake = 178, const unsigned char food = 248)
+	{
 		Height = height;
 		Width = width;
 		Score = 0;
 		CurrentDirection = 'r';
 		Board.resize(Height);
+		EMPTY = empty;
+		WALL = wall;
+		SNAKE = snake;
+		FOOD = food;
+
+		xRnd.Seed();
+		yRnd.Seed();
+
+		xRnd.SetParams(1, Height - 2);
+		yRnd.SetParams(1, Width - 2);
 
 		for (int i = 0; i < Height; i++)
 		{
@@ -183,10 +199,10 @@ public:
 		Snake.push_back(BoardPoint(x, y));
 	}
 
-	void Move()
+	bool Move()
 	{
 		if (CurrentDirection == ' ')
-			return;
+			return false;
 
 		Snake.back() = Snake.front();
 		if (CurrentDirection == 'r')
@@ -216,12 +232,10 @@ public:
 			Food = BoardPoint();
 			AddSegment();
 			CreateFood();
-			Score += Width + Height;
+			Score++;
+			return true;
 		}
-		else
-		{
-			Score -= 1;
-		}
+		return false;
 	}
 
 	void Turn(char direction)
@@ -294,7 +308,7 @@ public:
 	void CreateFood()
 	{
 		do {
-			Food = BoardPoint(rand() % (Height - 2) + 1, rand() % (Width - 2) + 1);
+			Food = BoardPoint(xRnd(), yRnd());
 		} while (std::find(Snake.begin(), Snake.end(), Food) != Snake.end());
 	}
 
@@ -366,15 +380,15 @@ const vector<float>& BuildOutput(const vector<Neuron>& output)
 int main()
 {
 	HideCursor();
-	NormalRealRandom r(0.0f, 1.f);
+	NormalRealRandom r(0.0f, 0.5f);
 
 	const int width = 10;
 	const int height = 10;
-	const int Elite = 100;
-	vector<GNeuralNetwork> nets(1000);
+	const int Elite = 150;
+	vector<GNeuralNetwork> nets(2000);
 	for (GNeuralNetwork& n : nets)
 	{
-		n.BuildFFNetwork({ 5, 4, 3 });
+		n.BuildFFNetwork({ 5, 8, 4, 3 });
 		n.RandomizeWeights();
 	}
 
@@ -387,21 +401,28 @@ int main()
 			SnakeGame game(width, height);
 			game.InitialSnakePos(1, 1);
 			int moveCount = 0;
-			while (!game.GameOver() && !GetAsyncKeyState(VK_ESCAPE) && ++moveCount <= 200)
+			int consecutiveNonEatingMoves = 0;
+			while (!game.GameOver())
 			{
 				const vector<float>& Input = game.BuildNeuralInput();
 				const vector<float>& Output = BuildOutput(nets[n].Feed(Input));
 				const int Index = (int)std::distance(Output.begin(), std::max_element(Output.begin(), Output.end()));
+
 				if (Index == 0)
 					game.Turn('u');
 				else if (Index == 1)
 					game.Turn('r');
 				else if (Index == 2)
 					game.Turn('l');
+
 				game.Move();
+
+				if (++moveCount >= 200 || GetAsyncKeyState(VK_ESCAPE))
+					break;
 			}
+
 			totalMovesInCurrentGeneration += moveCount;
-			nets[n].Info.Accuracy = (float)game.GetScore();
+			nets[n].Info.Accuracy = game.GetScore();
 		}
 
 		const float bestSoFar = nets.front().Info.Accuracy;
@@ -410,8 +431,9 @@ int main()
 				return left.Info.Accuracy > right.Info.Accuracy;
 			});
 
+		cout << "Current generation: " << ++currentGeneration
+			<< " | Average moves per game: " << totalMovesInCurrentGeneration / (int)nets.size();
 
-		cout << "Current generation: " << ++currentGeneration << " | Average moves per game: " << totalMovesInCurrentGeneration / (int)nets.size();
 		if (bestSoFar < nets.front().Info.Accuracy)
 			cout << " | New best: " << nets.front().Info.Accuracy;
 		cout << endl;
